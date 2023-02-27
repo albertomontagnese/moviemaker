@@ -1,0 +1,7 @@
+assets/music/*
+assets/videos/*
+assets/videos2/*
+output/*
+__pycache__
+GlobetrotterChronicles*
+.DS_Store

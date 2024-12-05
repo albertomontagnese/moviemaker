@@ -215,9 +215,11 @@ ADD_IMAGE = True
 # generate_text_label("test", True)
 # TODO reactivate this:
 video_dir = IS_TEST and './assets/videos2' or './assets/videos'
-print("Generating video from all videos in the folder " + video_dir)
+print("Generating videos from all videos in the folder " + video_dir)
+print(f"Video settings: {TOTAL_LENGTH_BEFORE_OUTRO}s main + {OUTRO_DURATION if ADD_OUTRO else 0}s outro")
 final_clip = get_final_clip_from_videos(video_dir)
-print("Generated video, total duration: " + str(final_clip.duration))
+print(f"Generated base video clip of {final_clip.duration:.1f}s")
+print(f"Will generate 1 video of {TOTAL_LENGTH_BEFORE_OUTRO + (OUTRO_DURATION if ADD_OUTRO else 0):.1f}s total length")
 
 final_music = None
 if (ADD_MUSIC):

@@ -5,6 +5,7 @@ from moviepy.video.fx.all import crop
 import constants
 import random
 import glob
+import time
 
 IS_TEST = False
 TOTAL_LENGTH_BEFORE_OUTRO = 10
@@ -183,20 +184,13 @@ def add_text(final_clip, facts, fact_index):
 
 
 # MAIN CODE ------------------------------------------------
+video_title_folder = './output/'
 
-
-# IS_TEST = True
-# TOTAL_LENGTH_BEFORE_OUTRO = 2 
-# ADD_OUTRO = False
-# ADD_MUSIC = False
-# ADD_TEXT = True
-
-# generate_text_label("test", True)
-# TODO reactivate this:
 video_dir = IS_TEST and './assets/videos2' or './assets/videos'
-print("Generating video from all videos in the folder " + video_dir)
+print("Generating videos from all videos in the folder " + video_dir)
+print(f"Videos will show in the output folder {video_title_folder}")    
 final_clip = get_final_clip_from_videos(video_dir)
-print("Generated video, total duration: " + str(final_clip.duration))
+print(f"Generated base video clip of {final_clip.duration:.1f}s")
 
 final_music = None
 if (ADD_MUSIC):
@@ -209,7 +203,16 @@ if (ADD_MUSIC):
     final_music = concatenate_audioclips(music_clips)
 
 print("Splitting into multiple videos and adding text and outro")
-for i in range(int(final_clip.duration / TOTAL_LENGTH_BEFORE_OUTRO)):
+num_videos = int(final_clip.duration / TOTAL_LENGTH_BEFORE_OUTRO)
+print(f"Will generate {num_videos} videos of {TOTAL_LENGTH_BEFORE_OUTRO} seconds each")
+print("Starting video generation...")
+
+start_time = time.time()
+
+for i in range(num_videos):
+    video_start_time = time.time()
+    print(f"\nProcessing video {i+1}/{num_videos}")
+    
     cur_clip = final_clip.subclip(TOTAL_LENGTH_BEFORE_OUTRO*i, TOTAL_LENGTH_BEFORE_OUTRO*(i+1))
     if (ADD_TEXT):
         all_facts = get_facts()
@@ -225,7 +228,6 @@ for i in range(int(final_clip.duration / TOTAL_LENGTH_BEFORE_OUTRO)):
 
 
     max_title_length = 150
-    video_title_folder = './output/'
     video_title_no_ext = 'GlobetrotterChronicles ' + str(i + 1) + " "
     video_title_no_ext += get_facts()[i]["question"] + " "
     if len(video_title_no_ext) < max_title_length:
@@ -236,6 +238,14 @@ for i in range(int(final_clip.duration / TOTAL_LENGTH_BEFORE_OUTRO)):
         video_title += '.mp4'
 
     cur_clip.write_videofile(video_title, fps=24, codec='libx264', audio_codec='aac')
+
+    video_end_time = time.time()
+    video_duration = round(video_end_time - video_start_time, 1)
+    total_duration = round(video_end_time - start_time, 1)
+    print(f"Video {i+1} completed in {video_duration}s (Total time elapsed: {total_duration}s)")
+
+print(f"\nAll {num_videos} videos generated successfully!")
+print(f"Total time taken: {round(time.time() - start_time, 1)}s")
 
 
 

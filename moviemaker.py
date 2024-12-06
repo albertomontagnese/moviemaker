@@ -3,13 +3,11 @@ import os
 import numpy as np
 from moviepy.video.fx.all import crop
 import constants
-import random
-import glob
 import time
 import pandas as pd
 
 IS_TEST = False
-TOTAL_LENGTH_BEFORE_OUTRO = 10
+TOTAL_LENGTH_BEFORE_OUTRO = 12
 ADD_OUTRO = False
 ADD_MUSIC = True
 MUSIC_DIRECTORY = './assets/music'
@@ -24,8 +22,9 @@ MARGIN_TOP = int(divmod(VIDEO_RESOLUTION_WIDTH * 0.275, 1)[0])
 STRINGS_LOCATION = "facts.csv"
 video_title_folder = './output/'
 MAIN_TITLE_FONT_TYPE = './assets/fonts/albas.ttf'
-FACT_FONT_TYPE = './assets/fonts/test.ttf'
-
+FACT_FONT_TYPE = './assets/fonts/CafeDeParisSans-BWwJx.ttf'
+BASE_VIDEO_FILE_NAME = 'Affirmative'
+MAX_HASHTAGS_LENGTH = 120
 
 def get_facts():
     facts = pd.read_csv(STRINGS_LOCATION)
@@ -34,34 +33,47 @@ def get_facts():
     return facts
 
 
-def get_hashtag_from_fact(fact_index, max_chars=120):
+def get_hashtag_from_fact(fact_index, max_chars=MAX_HASHTAGS_LENGTH):
     facts = get_facts()
-    # for each fact output only the fact "field or column" ie. the second column in the csv
-    fact = facts.iloc[fact_index]["FACT"]
+    # Split the hashtags string on spaces to get a list of hashtags
+    hashtags = facts.iloc[fact_index]["HASHTAGS"].split(" ")
     
-    
-    # remove QUANTITY and DATE entities
-    all_entities = [entity for entity in constants.comprehend_entities if entity["Type"] != "QUANTITY" and entity["Type"] != "DATE"]
-    # loop through all the entities and find the ones whose Text are in the fact
-    entities = [entity for entity in all_entities if entity["Text"] in fact]
-    # create an hashtags array with the entities Text. Keep in mind a Text can have multiple words, so we need to split it by space and add a # in front of each word
-    hashtags = []
-    for entity in entities:
-        words = entity["Text"].split(" ")
-        for word in words:
-            hashtags.append("#" + word)
-    # remove duplicates
-    hashtags = list(set(hashtags))
     if len(hashtags) < 5:
-        hashtags.append("#funfacts")
-        hashtags.append("#didyouknow")
-        hashtags.append("#travel")
-        hashtags.append("#traveltiktok")
-        hashtags.append("#interesting")
+        hashtags.extend(["#affirmation", "#affirmative", "#affirmativefacts", 
+                        "#affirmativequotes", "#affirmativeme"])
     
     while len(" ".join(hashtags)) > max_chars:
         hashtags.pop()
     return " ".join(hashtags)
+    
+    
+    
+    # for each fact output only the fact "field or column" ie. the second column in the csv
+    # fact = facts.iloc[fact_index]["FACT"]
+    
+    
+    # # remove QUANTITY and DATE entities
+    # all_entities = [entity for entity in constants.comprehend_entities if entity["Type"] != "QUANTITY" and entity["Type"] != "DATE"]
+    # # loop through all the entities and find the ones whose Text are in the fact
+    # entities = [entity for entity in all_entities if entity["Text"] in fact]
+    # # create an hashtags array with the entities Text. Keep in mind a Text can have multiple words, so we need to split it by space and add a # in front of each word
+    # hashtags = []
+    # for entity in entities:
+    #     words = entity["Text"].split(" ")
+    #     for word in words:
+    #         hashtags.append("#" + word)
+    # # remove duplicates
+    # hashtags = list(set(hashtags))
+    # if len(hashtags) < 5:
+    #     hashtags.append("#funfacts")
+    #     hashtags.append("#didyouknow")
+    #     hashtags.append("#travel")
+    #     hashtags.append("#traveltiktok")
+    #     hashtags.append("#interesting")
+    
+    # while len(" ".join(hashtags)) > max_chars:
+    #     hashtags.pop()
+    # return " ".join(hashtags)
 
     
     
@@ -228,7 +240,7 @@ for i in range(num_videos):
 
 
     max_title_length = 150
-    video_title_no_ext = 'GlobetrotterChronicles ' + str(i + 1) + " "
+    video_title_no_ext = BASE_VIDEO_FILE_NAME + " " + str(i + 1) + " "
     # video_title_no_ext += get_facts()[i]["fact"] + " "
     video_title_no_ext += get_facts().iloc[i]["FACT"] + " "
     if len(video_title_no_ext) < max_title_length:

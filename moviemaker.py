@@ -26,6 +26,8 @@ FACT_FONT_TYPE = './assets/fonts/AspireDemibold-YaaO.ttf'
 BASE_VIDEO_FILE_NAME = 'Affirmative'
 MAX_HASHTAGS_LENGTH = 120
 TEXT_FONT_WEIGHT = 3
+TEXT_1_KEY = "TEXT_1"
+TEXT_2_KEY = "TEXT_2"
 
 def get_facts():
     facts = pd.read_csv(STRINGS_LOCATION)
@@ -145,8 +147,9 @@ def generate_text_label(text, is_question, frame):
     return text_clip
 
 def add_text(final_clip, facts, fact_index):
-    fact_string_text = facts.iloc[fact_index]["FACT"]
-    print("Adding text to the video number " + str(fact_index) + "), Fact question: " + fact_string_text)
+    fact_question = facts.iloc[fact_index][TEXT_1_KEY]
+    fact_answer = facts.iloc[fact_index][TEXT_2_KEY]
+    print("Adding text to the video number " + str(fact_index) + "), Fact question: " + fact_question)
     
     # Only add the "DID YOU KNOW?" title if ADD_TITLE is True
     if MAIN_TITLE:
@@ -157,11 +160,18 @@ def add_text(final_clip, facts, fact_index):
         txt_clip = txt_clip.margin(top=MARGIN_TOP, opacity=0)
         txt_clip = txt_clip.set_duration(TOTAL_LENGTH_BEFORE_OUTRO)
     
-    
+    # Create question text clip (first half)
     frame = final_clip.get_frame(0)
-    txt_clip = generate_text_label(fact_string_text, True, frame)
-    txt_clip = txt_clip.set_duration(TOTAL_LENGTH_BEFORE_OUTRO)
-    final_clip = CompositeVideoClip([final_clip, txt_clip])
+    question_clip = generate_text_label(fact_question, True, frame)
+    question_clip = question_clip.set_duration(TOTAL_LENGTH_BEFORE_OUTRO/2)
+    
+    # Create answer text clip (second half)
+    answer_clip = generate_text_label(fact_answer, False, frame)
+    answer_clip = answer_clip.set_start(TOTAL_LENGTH_BEFORE_OUTRO/2)  # Start at halfway point
+    answer_clip = answer_clip.set_duration(TOTAL_LENGTH_BEFORE_OUTRO/2)
+    
+    # Combine clips
+    final_clip = CompositeVideoClip([final_clip, question_clip, answer_clip])
     
     if MAIN_TITLE:
         final_clip = CompositeVideoClip([final_clip, txt_clip])
@@ -214,7 +224,7 @@ def process_videos():
         max_title_length = 150
         video_title_no_ext = BASE_VIDEO_FILE_NAME + " " + str(i + 1) + " "
         # video_title_no_ext += get_facts()[i]["fact"] + " "
-        video_title_no_ext += get_facts().iloc[i]["FACT"] + " "
+        video_title_no_ext += get_facts().iloc[i][TEXT_1_KEY] + " "
         if len(video_title_no_ext) < max_title_length:
             video_title_no_ext += get_hashtag_from_fact(i, max_title_length - len(video_title_no_ext))
         video_title = video_title_folder + video_title_no_ext
@@ -237,18 +247,22 @@ def process_videos():
 # create just one frame of the video to test the text
 def test_text_label():
     frame = ImageClip('./assets/pics/other/test.jpeg')
-    txt_clip = get_facts().iloc[0]["FACT"]  
+    txt_clip = get_facts().iloc[0][TEXT_1_KEY]  
     txt_clip = generate_text_label(txt_clip, True, frame)
     # Create a composite clip with both the background frame and text
     test_composite = CompositeVideoClip([frame, txt_clip])
     test_composite.save_frame("out.png")
     exit()
 
-# test_text_label()
 
 # MAIN CODE ------------------------------------------------
 
 if __name__ == "__main__":
+    
+    # test 1
+    # test_text_label()
+    
+    # main code
     process_videos()
 
 

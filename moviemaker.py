@@ -21,7 +21,7 @@ def get_default_params():
         'strings_location': "facts.csv",
         'video_title_folder': './output/',
         'main_title_font_type': './assets/fonts/albas.ttf',
-        'fact_font_type': './assets/fonts/AspireDemibold-YaaO.ttf',
+        'fact_font_type': './assets/fonts/Raleway-Bold.ttf',
         'base_video_file_name': 'Affirmative',
         'max_hashtags_length': 120,
         'text_font_weight': 3,
@@ -34,7 +34,7 @@ params = get_default_params()
 
 # Initialize derived parameters
 VIDEO_RESOLUTION_HEIGHT = params['video_resolution_width'] * 16/9
-MARGIN_TOP = int(divmod(params['video_resolution_width'] * 0.275, 1)[0])
+MARGIN_TOP = int(divmod(params['video_resolution_width'] * 0.15, 1)[0])
 OUTRO = VideoFileClip('./assets/outro/outro.mp4')
 OUTRO_DURATION = OUTRO.duration
 
@@ -45,7 +45,7 @@ def set_params(new_params=None):
     
     # Update derived parameters
     VIDEO_RESOLUTION_HEIGHT = params['video_resolution_width'] * 16/9
-    MARGIN_TOP = int(divmod(params['video_resolution_width'] * 0.275, 1)[0])
+    MARGIN_TOP = int(divmod(params['video_resolution_width'] * 0.15, 1)[0])
 
 def get_facts():
     facts = pd.read_csv(params['strings_location'])
@@ -142,7 +142,7 @@ def generate_text_label(text, is_question, frame):
         frame_array = frame
     is_light = np.mean(frame_array) > 127
     font_color = is_light and "black" or "white"
-    stroke_color = font_color
+    stroke_color = font_color == "black" and "white" or "black"  # Opposite of font color
     red_color = (255, 0, 0)
     green_color = (0, 255, 0)
     bg_color = is_question and red_color or green_color
@@ -152,12 +152,12 @@ def generate_text_label(text, is_question, frame):
                         font=font_type,
                         color=font_color,
                         stroke_color=stroke_color,
-                        stroke_width=params['text_font_weight'],
+                        stroke_width=2,
                         kerning=-2, 
                         interline=-1, 
                         method='caption')
     text_clip = text_clip.set_position('bottom')
-    text_clip = text_clip.margin(bottom=MARGIN_TOP, opacity=0)
+    text_clip = text_clip.margin(bottom=MARGIN_TOP*3, opacity=0)
     
     # if (IS_TEST):
     #     preview = CompositeVideoClip([frame, clip_to_overlay])

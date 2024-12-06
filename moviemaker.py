@@ -25,6 +25,7 @@ MAIN_TITLE_FONT_TYPE = './assets/fonts/albas.ttf'
 FACT_FONT_TYPE = './assets/fonts/AspireDemibold-YaaO.ttf'
 BASE_VIDEO_FILE_NAME = 'Affirmative'
 MAX_HASHTAGS_LENGTH = 120
+TEXT_FONT_WEIGHT = 3
 
 def get_facts():
     facts = pd.read_csv(STRINGS_LOCATION)
@@ -121,6 +122,7 @@ def generate_text_label(text, is_question, frame):
         frame_array = frame
     is_light = np.mean(frame_array) > 127
     font_color = is_light and "black" or "white"
+    stroke_color = font_color
     red_color = (255, 0, 0)
     green_color = (0, 255, 0)
     bg_color = is_question and red_color or green_color
@@ -129,6 +131,8 @@ def generate_text_label(text, is_question, frame):
                         size=(0.875 * VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_WIDTH / 2),
                         font=font_type,
                         color=font_color,
+                        stroke_color=stroke_color,
+                        stroke_width=TEXT_FONT_WEIGHT,
                         kerning=-2, 
                         interline=-1, 
                         method='caption')
@@ -164,6 +168,69 @@ def add_text(final_clip, facts, fact_index):
 
     return final_clip
 
+def process_videos():
+    video_dir = IS_TEST and './assets/videos2' or './assets/videos'
+    print("--------------- IMPORTANT READ CAREFULLY ----------------")
+    print("I'm creating a huge video from all the .mp4 videos ( only mp4 videos ) in the folder " + video_dir)
+    print("don't use this file if its resolution height is less than VIDEO_RESOLUTION_HEIGHT")
+
+    print(f"Then I'll split it into multiple videos and add text and outro to each one of them, which will show in the output folder {video_title_folder}")    
+    final_clip = get_final_clip_from_videos(video_dir)
+    print(f"Generated base video clip of {final_clip.duration:.1f}s")
+
+    final_music = None
+    if (ADD_MUSIC):
+        # concatenate all the music files in the folder ./assets/music 
+        music_files = os.listdir(MUSIC_DIRECTORY)
+        music_files = [file for file in music_files if file.endswith('.mp3')]
+        music_clips = [AudioFileClip(MUSIC_DIRECTORY + '/' + file) for file in music_files]
+        final_music = concatenate_audioclips(music_clips)
+
+    print("Splitting into multiple videos and adding text and outro")
+    num_videos = int(final_clip.duration / TOTAL_LENGTH_BEFORE_OUTRO)
+    print(f"Will generate {num_videos} videos of {TOTAL_LENGTH_BEFORE_OUTRO} seconds each")
+    print("Starting video generation...")
+
+    start_time = time.time()
+
+    for i in range(num_videos):
+        video_start_time = time.time()
+        print(f"\nProcessing video {i+1}/{num_videos}")
+        
+        cur_clip = final_clip.subclip(TOTAL_LENGTH_BEFORE_OUTRO*i, TOTAL_LENGTH_BEFORE_OUTRO*(i+1))
+        if (ADD_TEXT):
+            all_facts = get_facts()
+            cur_clip = add_text(cur_clip, all_facts, i)
+        if (ADD_OUTRO):
+            cur_clip = concatenate_videoclips([cur_clip, OUTRO], method="compose")
+            
+        print("Adding music")
+        # add the music
+        if (ADD_MUSIC):
+            cur_clip =  add_music(final_music, cur_clip)
+            cur_clip = cur_clip.audio_fadeout(OUTRO_DURATION + 1)
+
+
+        max_title_length = 150
+        video_title_no_ext = BASE_VIDEO_FILE_NAME + " " + str(i + 1) + " "
+        # video_title_no_ext += get_facts()[i]["fact"] + " "
+        video_title_no_ext += get_facts().iloc[i]["FACT"] + " "
+        if len(video_title_no_ext) < max_title_length:
+            video_title_no_ext += get_hashtag_from_fact(i, max_title_length - len(video_title_no_ext))
+        video_title = video_title_folder + video_title_no_ext
+        
+        if not video_title.endswith('.mp4'):
+            video_title += '.mp4'
+
+        cur_clip.write_videofile(video_title, fps=24, codec='libx264', audio_codec='aac')
+
+        video_end_time = time.time()
+        video_duration = round(video_end_time - video_start_time, 1)
+        total_duration = round(video_end_time - start_time, 1)
+        print(f"Video {i+1} completed in {video_duration}s (Total time elapsed: {total_duration}s)")
+
+    print(f"\nAll {num_videos} videos generated successfully!")
+    print(f"Total time taken: {round(time.time() - start_time, 1)}s")
 
 # TEST FUNCTIONS ------------------------------------------------
 
@@ -176,76 +243,13 @@ def test_text_label():
     test_composite = CompositeVideoClip([frame, txt_clip])
     test_composite.save_frame("out.png")
     exit()
-test_text_label()
+
+# test_text_label()
 
 # MAIN CODE ------------------------------------------------
 
-
-video_dir = IS_TEST and './assets/videos2' or './assets/videos'
-print("--------------- IMPORTANT READ CAREFULLY ----------------")
-print("I'm creating a huge video from all the .mp4 videos ( only mp4 videos ) in the folder " + video_dir)
-print("don't use this file if its resolution height is less than VIDEO_RESOLUTION_HEIGHT")
-
-print(f"Then I'll split it into multiple videos and add text and outro to each one of them, which will show in the output folder {video_title_folder}")    
-final_clip = get_final_clip_from_videos(video_dir)
-print(f"Generated base video clip of {final_clip.duration:.1f}s")
-
-
-final_music = None
-if (ADD_MUSIC):
-
-    # concatenate all the music files in the folder ./assets/music 
-    music_files = os.listdir(MUSIC_DIRECTORY)
-    # remove those that are not .mp3
-    music_files = [file for file in music_files if file.endswith('.mp3')]
-    music_clips = [AudioFileClip(MUSIC_DIRECTORY + '/' + file) for file in music_files]
-    final_music = concatenate_audioclips(music_clips)
-
-print("Splitting into multiple videos and adding text and outro")
-num_videos = int(final_clip.duration / TOTAL_LENGTH_BEFORE_OUTRO)
-print(f"Will generate {num_videos} videos of {TOTAL_LENGTH_BEFORE_OUTRO} seconds each")
-print("Starting video generation...")
-
-start_time = time.time()
-
-for i in range(num_videos):
-    video_start_time = time.time()
-    print(f"\nProcessing video {i+1}/{num_videos}")
-    
-    cur_clip = final_clip.subclip(TOTAL_LENGTH_BEFORE_OUTRO*i, TOTAL_LENGTH_BEFORE_OUTRO*(i+1))
-    if (ADD_TEXT):
-        all_facts = get_facts()
-        cur_clip = add_text(cur_clip, all_facts, i)
-    if (ADD_OUTRO):
-        cur_clip = concatenate_videoclips([cur_clip, OUTRO], method="compose")
-        
-    print("Adding music")
-    # add the music
-    if (ADD_MUSIC):
-        cur_clip =  add_music(final_music, cur_clip)
-        cur_clip = cur_clip.audio_fadeout(OUTRO_DURATION + 1)
-
-
-    max_title_length = 150
-    video_title_no_ext = BASE_VIDEO_FILE_NAME + " " + str(i + 1) + " "
-    # video_title_no_ext += get_facts()[i]["fact"] + " "
-    video_title_no_ext += get_facts().iloc[i]["FACT"] + " "
-    if len(video_title_no_ext) < max_title_length:
-        video_title_no_ext += get_hashtag_from_fact(i, max_title_length - len(video_title_no_ext))
-    video_title = video_title_folder + video_title_no_ext
-    
-    if not video_title.endswith('.mp4'):
-        video_title += '.mp4'
-
-    cur_clip.write_videofile(video_title, fps=24, codec='libx264', audio_codec='aac')
-
-    video_end_time = time.time()
-    video_duration = round(video_end_time - video_start_time, 1)
-    total_duration = round(video_end_time - start_time, 1)
-    print(f"Video {i+1} completed in {video_duration}s (Total time elapsed: {total_duration}s)")
-
-print(f"\nAll {num_videos} videos generated successfully!")
-print(f"Total time taken: {round(time.time() - start_time, 1)}s")
+if __name__ == "__main__":
+    process_videos()
 
 
 

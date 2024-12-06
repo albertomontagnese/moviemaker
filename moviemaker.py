@@ -7,11 +7,13 @@ import random
 import glob
 import time
 
-IS_TEST = False
+IS_TEST = True
 TOTAL_LENGTH_BEFORE_OUTRO = 10
 ADD_OUTRO = True
 ADD_MUSIC = True
 ADD_TEXT = True
+# MAIN_TITLE = "Did You Know?"
+MAIN_TITLE = ""
 OUTRO = VideoFileClip('./assets/outro/outro.mp4')
 OUTRO_DURATION = OUTRO.duration
 VIDEO_RESOLUTION_WIDTH = 720
@@ -143,23 +145,16 @@ def generate_text_label(text, is_question, frame):
     return text_clip
 
 def add_text(final_clip, facts, fact_index):
-
     print("Adding text to the video number " + str(fact_index) + "), Fact question: " + facts[fact_index]["question"]) 
-    # add text to the video, the text has a black background and a white color
     
-    # get a random font_type from the fonts folder ./assets/fonts
-    # font_type = random.choice(glob.glob("./assets/fonts/*.ttf"))
-    # print("font_type: " + font_type)
-
-    font_type = './assets/fonts/albas.ttf'
-    
-    
-    txt_clip = TextClip(" DID YOU KNOW? ", fontsize=50, color='white', font=font_type)
-    txt_clip = txt_clip.on_color(size=(txt_clip.w+10,txt_clip.h+10), color=(0,0,0), pos=('center','center'), col_opacity=1)
-    txt_clip = txt_clip.set_pos(('center','top'))
-    txt_clip = txt_clip.margin(top=MARGIN_TOP, opacity=0) # (optional) logo-border padding
-    txt_clip = txt_clip.set_duration(TOTAL_LENGTH_BEFORE_OUTRO)
-
+    # Only add the "DID YOU KNOW?" title if ADD_TITLE is True
+    if MAIN_TITLE:
+        font_type = './assets/fonts/albas.ttf'
+        txt_clip = TextClip(" DID YOU KNOW? ", fontsize=50, color='white', font=font_type)
+        txt_clip = txt_clip.on_color(size=(txt_clip.w+10,txt_clip.h+10), color=(0,0,0), pos=('center','center'), col_opacity=1)
+        txt_clip = txt_clip.set_pos(('center','top'))
+        txt_clip = txt_clip.margin(top=MARGIN_TOP, opacity=0)
+        txt_clip = txt_clip.set_duration(TOTAL_LENGTH_BEFORE_OUTRO)
     
     random_str2 = facts[fact_index]["question"] + "..." 
     frame = final_clip.get_frame(0)
@@ -178,7 +173,9 @@ def add_text(final_clip, facts, fact_index):
 
 
     
-    final_clip = CompositeVideoClip([final_clip, txt_clip]) 
+    # Only add the title clip if ADD_TITLE is True
+    if MAIN_TITLE:
+        final_clip = CompositeVideoClip([final_clip, txt_clip])
 
     return final_clip
 

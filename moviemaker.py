@@ -12,6 +12,7 @@ IS_TEST = False
 TOTAL_LENGTH_BEFORE_OUTRO = 10
 ADD_OUTRO = False
 ADD_MUSIC = True
+MUSIC_DIRECTORY = './assets/music'
 ADD_TEXT = True
 # MAIN_TITLE = "Did You Know?"
 MAIN_TITLE = ""
@@ -22,6 +23,8 @@ VIDEO_RESOLUTION_HEIGHT = VIDEO_RESOLUTION_WIDTH * 16/9
 MARGIN_TOP = int(divmod(VIDEO_RESOLUTION_WIDTH * 0.275, 1)[0])
 STRINGS_LOCATION = "facts.csv"
 video_title_folder = './output/'
+MAIN_TITLE_FONT_TYPE = './assets/fonts/albas.ttf'
+FACT_FONT_TYPE = './assets/fonts/test.ttf'
 
 
 def get_facts():
@@ -135,7 +138,7 @@ def generate_text_label(text, is_question, frame):
     red_color = (255, 0, 0)
     green_color = (0, 255, 0)
     bg_color = is_question and red_color or green_color
-    font_type = './assets/fonts/test.ttf'
+    font_type = FACT_FONT_TYPE
     text_clip = TextClip(txt=text,
                         size=(0.875 * VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_WIDTH / 2),
                         font=font_type,
@@ -157,8 +160,8 @@ def add_text(final_clip, facts, fact_index):
     
     # Only add the "DID YOU KNOW?" title if ADD_TITLE is True
     if MAIN_TITLE:
-        font_type = './assets/fonts/albas.ttf'
-        txt_clip = TextClip(" DID YOU KNOW? ", fontsize=50, color='white', font=font_type)
+        font_type = MAIN_TITLE_FONT_TYPE
+        txt_clip = TextClip(MAIN_TITLE, fontsize=50, color='white', font=font_type)
         txt_clip = txt_clip.on_color(size=(txt_clip.w+10,txt_clip.h+10), color=(0,0,0), pos=('center','center'), col_opacity=1)
         txt_clip = txt_clip.set_pos(('center','top'))
         txt_clip = txt_clip.margin(top=MARGIN_TOP, opacity=0)
@@ -180,27 +183,23 @@ def add_text(final_clip, facts, fact_index):
 
 
 video_dir = IS_TEST and './assets/videos2' or './assets/videos'
-print("Generating videos from all videos in the folder " + video_dir)
-print(f"Videos will show in the output folder {video_title_folder}")    
+print("--------------- IMPORTANT READ CAREFULLY ----------------")
+print("I'm creating a huge video from all the .mp4 videos ( only mp4 videos ) in the folder " + video_dir)
+print("don't use this file if its resolution height is less than VIDEO_RESOLUTION_HEIGHT")
+
+print(f"Then I'll split it into multiple videos and add text and outro to each one of them, which will show in the output folder {video_title_folder}")    
 final_clip = get_final_clip_from_videos(video_dir)
 print(f"Generated base video clip of {final_clip.duration:.1f}s")
 
 
-# facts = get_facts()
-# print(facts)
-# # stop here
-# exit()
-
-
-
 final_music = None
 if (ADD_MUSIC):
-    audio_dir = './assets/music'
+
     # concatenate all the music files in the folder ./assets/music 
-    music_files = os.listdir(audio_dir)
+    music_files = os.listdir(MUSIC_DIRECTORY)
     # remove those that are not .mp3
     music_files = [file for file in music_files if file.endswith('.mp3')]
-    music_clips = [AudioFileClip(audio_dir + '/' + file) for file in music_files]
+    music_clips = [AudioFileClip(MUSIC_DIRECTORY + '/' + file) for file in music_files]
     final_music = concatenate_audioclips(music_clips)
 
 print("Splitting into multiple videos and adding text and outro")

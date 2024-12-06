@@ -6,10 +6,11 @@ import constants
 import random
 import glob
 import time
+import pandas as pd
 
-IS_TEST = True
+IS_TEST = False
 TOTAL_LENGTH_BEFORE_OUTRO = 10
-ADD_OUTRO = True
+ADD_OUTRO = False
 ADD_MUSIC = True
 ADD_TEXT = True
 # MAIN_TITLE = "Did You Know?"
@@ -19,17 +20,23 @@ OUTRO_DURATION = OUTRO.duration
 VIDEO_RESOLUTION_WIDTH = 720
 VIDEO_RESOLUTION_HEIGHT = VIDEO_RESOLUTION_WIDTH * 16/9
 MARGIN_TOP = int(divmod(VIDEO_RESOLUTION_WIDTH * 0.275, 1)[0])
+STRINGS_LOCATION = "facts.csv"
+video_title_folder = './output/'
 
 
 def get_facts():
-    # remove duplicates and store value in facts again
-    facts = list({v['question']:v for v in constants.all_facts}.values())
+    facts = pd.read_csv(STRINGS_LOCATION)
+    # keep in mind that the first row is the header
+    facts = facts.iloc[1:]  
     return facts
 
 
 def get_hashtag_from_fact(fact_index, max_chars=120):
     facts = get_facts()
-    fact = facts[fact_index]["answer"]
+    # for each fact output only the fact "field or column" ie. the second column in the csv
+    fact = facts.iloc[fact_index]["FACT"]
+    
+    
     # remove QUANTITY and DATE entities
     all_entities = [entity for entity in constants.comprehend_entities if entity["Type"] != "QUANTITY" and entity["Type"] != "DATE"]
     # loop through all the entities and find the ones whose Text are in the fact
@@ -145,7 +152,8 @@ def generate_text_label(text, is_question, frame):
     return text_clip
 
 def add_text(final_clip, facts, fact_index):
-    print("Adding text to the video number " + str(fact_index) + "), Fact question: " + facts[fact_index]["question"]) 
+    fact_string_text = facts.iloc[fact_index]["FACT"]
+    print("Adding text to the video number " + str(fact_index) + "), Fact question: " + fact_string_text)
     
     # Only add the "DID YOU KNOW?" title if ADD_TITLE is True
     if MAIN_TITLE:
@@ -156,24 +164,12 @@ def add_text(final_clip, facts, fact_index):
         txt_clip = txt_clip.margin(top=MARGIN_TOP, opacity=0)
         txt_clip = txt_clip.set_duration(TOTAL_LENGTH_BEFORE_OUTRO)
     
-    random_str2 = facts[fact_index]["question"] + "..." 
-    frame = final_clip.get_frame(0)
-    txt_clip2 = generate_text_label(random_str2, True,frame)
-    txt_clip2 = txt_clip2.set_duration(TOTAL_LENGTH_BEFORE_OUTRO/2)
-    final_clip = CompositeVideoClip([final_clip, txt_clip2]) 
-
-    random_str3 = "..." + facts[fact_index]["answer"]
-    frame = final_clip.get_frame(TOTAL_LENGTH_BEFORE_OUTRO/2)
-    txt_clip3 = generate_text_label(random_str3, False, frame)
-    txt_clip3 = txt_clip3.set_duration(TOTAL_LENGTH_BEFORE_OUTRO/2)
-    txt_clip3 = txt_clip3.set_start(TOTAL_LENGTH_BEFORE_OUTRO/2)
-    final_clip = CompositeVideoClip([final_clip, txt_clip3]) 
-
-
-
-
     
-    # Only add the title clip if ADD_TITLE is True
+    frame = final_clip.get_frame(0)
+    txt_clip = generate_text_label(fact_string_text, True, frame)
+    txt_clip = txt_clip.set_duration(TOTAL_LENGTH_BEFORE_OUTRO)
+    final_clip = CompositeVideoClip([final_clip, txt_clip])
+    
     if MAIN_TITLE:
         final_clip = CompositeVideoClip([final_clip, txt_clip])
 
@@ -181,13 +177,21 @@ def add_text(final_clip, facts, fact_index):
 
 
 # MAIN CODE ------------------------------------------------
-video_title_folder = './output/'
+
 
 video_dir = IS_TEST and './assets/videos2' or './assets/videos'
 print("Generating videos from all videos in the folder " + video_dir)
 print(f"Videos will show in the output folder {video_title_folder}")    
 final_clip = get_final_clip_from_videos(video_dir)
 print(f"Generated base video clip of {final_clip.duration:.1f}s")
+
+
+# facts = get_facts()
+# print(facts)
+# # stop here
+# exit()
+
+
 
 final_music = None
 if (ADD_MUSIC):
@@ -226,7 +230,8 @@ for i in range(num_videos):
 
     max_title_length = 150
     video_title_no_ext = 'GlobetrotterChronicles ' + str(i + 1) + " "
-    video_title_no_ext += get_facts()[i]["question"] + " "
+    # video_title_no_ext += get_facts()[i]["fact"] + " "
+    video_title_no_ext += get_facts().iloc[i]["FACT"] + " "
     if len(video_title_no_ext) < max_title_length:
         video_title_no_ext += get_hashtag_from_fact(i, max_title_length - len(video_title_no_ext))
     video_title = video_title_folder + video_title_no_ext

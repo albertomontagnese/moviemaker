@@ -47,36 +47,6 @@ def get_hashtag_from_fact(fact_index, max_chars=MAX_HASHTAGS_LENGTH):
     return " ".join(hashtags)
     
     
-    
-    # for each fact output only the fact "field or column" ie. the second column in the csv
-    # fact = facts.iloc[fact_index]["FACT"]
-    
-    
-    # # remove QUANTITY and DATE entities
-    # all_entities = [entity for entity in constants.comprehend_entities if entity["Type"] != "QUANTITY" and entity["Type"] != "DATE"]
-    # # loop through all the entities and find the ones whose Text are in the fact
-    # entities = [entity for entity in all_entities if entity["Text"] in fact]
-    # # create an hashtags array with the entities Text. Keep in mind a Text can have multiple words, so we need to split it by space and add a # in front of each word
-    # hashtags = []
-    # for entity in entities:
-    #     words = entity["Text"].split(" ")
-    #     for word in words:
-    #         hashtags.append("#" + word)
-    # # remove duplicates
-    # hashtags = list(set(hashtags))
-    # if len(hashtags) < 5:
-    #     hashtags.append("#funfacts")
-    #     hashtags.append("#didyouknow")
-    #     hashtags.append("#travel")
-    #     hashtags.append("#traveltiktok")
-    #     hashtags.append("#interesting")
-    
-    # while len(" ".join(hashtags)) > max_chars:
-    #     hashtags.pop()
-    # return " ".join(hashtags)
-
-    
-    
 def crop_outro():
     # doesnt work
     print("Cropping the outro to 9:16 ratio")
@@ -144,8 +114,12 @@ def add_music(final_music, final_clip):
     return final_clip
 
 def generate_text_label(text, is_question, frame):
-    
-    is_light = np.mean(frame) > 127
+    # Check if frame is an ImageClip (test case) or regular video frame
+    if isinstance(frame, ImageClip):
+        frame_array = frame.get_frame(0)
+    else:
+        frame_array = frame
+    is_light = np.mean(frame_array) > 127
     font_color = is_light and "black" or "white"
     red_color = (255, 0, 0)
     green_color = (0, 255, 0)
@@ -190,6 +164,19 @@ def add_text(final_clip, facts, fact_index):
 
     return final_clip
 
+
+# TEST FUNCTIONS ------------------------------------------------
+
+# create just one frame of the video to test the text
+def test_text_label():
+    frame = ImageClip('./assets/pics/other/test.jpeg')
+    txt_clip = get_facts().iloc[0]["FACT"]  
+    txt_clip = generate_text_label(txt_clip, True, frame)
+    # Create a composite clip with both the background frame and text
+    test_composite = CompositeVideoClip([frame, txt_clip])
+    test_composite.save_frame("out.png")
+    exit()
+test_text_label()
 
 # MAIN CODE ------------------------------------------------
 

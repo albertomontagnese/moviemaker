@@ -22,7 +22,7 @@ MARGIN_TOP = int(divmod(VIDEO_RESOLUTION_WIDTH * 0.275, 1)[0])
 STRINGS_LOCATION = "facts.csv"
 video_title_folder = './output/'
 MAIN_TITLE_FONT_TYPE = './assets/fonts/albas.ttf'
-FACT_FONT_TYPE = './assets/fonts/CafeDeParisSans-BWwJx.ttf'
+FACT_FONT_TYPE = './assets/fonts/AspireDemibold-YaaO.ttf'
 BASE_VIDEO_FILE_NAME = 'Affirmative'
 MAX_HASHTAGS_LENGTH = 120
 
